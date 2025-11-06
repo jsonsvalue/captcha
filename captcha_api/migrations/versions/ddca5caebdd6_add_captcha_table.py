@@ -26,5 +26,5 @@ def upgrade():
     )
 
 
-def downgrade():
-    op.drop_table("captcha")
+# def downgrade():
+#     op.drop_table("captcha")

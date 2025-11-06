@@ -75,23 +75,29 @@ class CaptchaResource(Resource):
 
         existing = Captcha.query.filter_by(id=data["id"]).first()
         if not existing:
-            return {"message": "Not found"}, 404
+            return {"message": "Not found in DB"}, 404
 
+        # 10분 이상이 됐을 때만 삭제.
         time_difference = datetime.utcnow() - existing.creation_time
-        if time_difference > timedelta(minutes=1):
+        if time_difference > timedelta(minutes=10):
             db.session.delete(existing)
             db.session.commit()
-            return {"message": "You did not answer fast enough!"}, 400
-
+            return {"message": "You did not answer fast enough!", "expireTime": existing.creation_time + timedelta(minutes=10)}, 400
+            #"message": "You did not answer fast enough! Answer within: "+ time_difference +"min"
+            
+        # 잘못 답변했을 때, DB에 그대로 둔다.
         if data["answer"].casefold() != existing.answer.casefold():
-            db.session.delete(existing)
-            db.session.commit()
-            return {"message": "Invalid answer"}, 400
+            # db.session.delete(existing)
+            # db.session.commit()
+            return {"message": "Wrong Answer"}, 401
 
+        # 제대로 답변 시 삭제.
         db.session.delete(existing)
         db.session.commit()
-        return {"message": "Valid"}
+        return {"message": "Valid"}, 200
 
+# 시간 있으면 429에러 추가하기
+# 서버에 대한 부하를 줄이기 위해서 악의적인 캡차 서버 남용을 막는다.
 
 @captcha_ns.route("/audio/<string:captcha_id>")
 class CaptchaAudioResource(Resource):

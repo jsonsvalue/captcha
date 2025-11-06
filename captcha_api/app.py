@@ -82,4 +82,11 @@ def create_app(config_override=None, use_env_config=True) -> Flask:
     # Blueprints
     app.register_blueprint(index_bp)
 
+
+    # ✅ 테이블이 없으면 자동 생성 (이미 있으면 아무 일도 안 함)
+    with app.app_context():
+        from captcha_api import models
+        db.create_all()
+        app.logger.info("✅ DB 테이블 자동 확인 및 생성 완료")
+
     return app
